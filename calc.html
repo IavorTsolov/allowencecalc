@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allowance Pro</title>
+    <style>
+        :root {
+            /* LIGHT THEME (Palette 1) */
+            --bg-main: linear-gradient(135deg, #41BBD9 0%, #006E90 100%);
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --text-head: #4C3B4D;
+            --text-body: #006E90;
+            --row-bg: rgba(173, 202, 214, 0.2);
+            --accent: #006E90;
+            --positive: #97CC04;
+            --negative: #e53e3e;
+            --btn-text: #ffffff;
+            --shadow: rgba(0, 110, 144, 0.2);
+        }
+
+        [data-theme="dark"] {
+            /* DARK THEME (Palette 2) */
+            --bg-main: linear-gradient(135deg, #131515 0%, #2B2C28 100%);
+            --card-bg: rgba(43, 44, 40, 0.95);
+            --text-head: #D1C6AD;
+            --text-body: #D1C6AD;
+            --row-bg: rgba(19, 21, 21, 0.6);
+            --accent: #50808E;
+            --positive: #3C887E;
+            --negative: #FF4B3E;
+            --btn-text: #131515;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+        }
+
+        body {
+            background: var(--bg-main);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            transition: all 0.5s ease;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 50px -12px var(--shadow);
+            position: relative;
+            padding: 25px;
+        }
+
+        @media (min-width: 480px) {
+            .card { padding: 40px; }
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            border: none;
+            background: var(--row-bg);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--text-head); font-size: 1.8rem; }
+        .header p { color: var(--text-body); opacity: 0.8; font-size: 0.9rem; }
+
+        .grade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--row-bg);
+            border-radius: 18px;
+            margin-bottom: 12px;
+            padding: 15px 20px;
+            transition: 0.3s;
+        }
+
+        .grade-label { font-weight: 700; color: var(--text-head); }
+        .grade-sub { font-size: 0.75rem; color: var(--text-body); font-weight: 600; }
+
+        .controls { display: flex; align-items: center; gap: 15px; }
+
+        .btn {
+            width: 36px; height: 36px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: var(--btn-text);
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover { transform: scale(1.1); }
+        .count { font-weight: 800; min-width: 25px; text-align: center; color: var(--text-head); }
+
+        /* --- UPDATED STATS SECTION --- */
+        .stats {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid var(--row-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Laptop View: Stack labels and values vertically */
+        @media (min-width: 1024px) {
+            .stat-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .val { 
+                font-size: 1.8rem !important; 
+                width: 100%;
+                text-align: left;
+            }
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: var(--text-body);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .val { 
+            font-family: 'Courier New', Courier, monospace; 
+            font-weight: 800;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+
+        .total-bgn { font-size: 1.5rem; }
+
+        .pos { color: var(--positive) !important; }
+        .neg { color: var(--negative) !important; }
+
+        .reset {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border-radius: 15px;
+            border: none;
+            background: var(--text-head);
+            color: var(--card-bg);
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="card">
+        <button class="theme-switch" onclick="toggleTheme()">🌓</button>
+        
+        <div class="header">
+            <h1>Allowance</h1>
+            <p>Base: 90.00 BGN</p>
+        </div>
+
+        <div id="ui-mount"></div>
+
+        <div class="stats">
+            <div class="stat-row">
+                <span class="stat-label">Avg Grade</span>
+                <span id="avg" class="val">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Total BGN</span>
+                <span id="bgn" class="val total-bgn">90.00</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Total EUR</span>
+                <span id="eur" class="val" style="opacity: 0.8;">46.02</span>
+            </div>
+        </div>
+
+        <button class="reset" onclick="reset()">Clear All Data</button>
+    </div>
+
+    <script>
+        const state = { 6:0, 5:0, 4:0, 3:0, 2:0 };
+        const rates = { 6:15, 5:10, 4:0, 3:-15, 2:-22 };
+
+        function init() {
+            const mount = document.getElementById('ui-mount');
+            [6, 5, 4, 3, 2].forEach(g => {
+                mount.innerHTML += `
+                    <div class="grade-item">
+                        <div>
+                            <div class="grade-label">Grade ${g}</div>
+                            <div class="grade-sub">${rates[g] >= 0 ? '+' : ''}${rates[g]} BGN</div>
+                        </div>
+                        <div class="controls">
+                            <button class="btn" onclick="act(${g}, -1)">−</button>
+                            <span id="cnt-${g}" class="count">0</span>
+                            <button class="btn" onclick="act(${g}, 1)">+</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function act(g, d) {
+            if(state[g] + d < 0) return;
+            state[g] += d;
+            document.getElementById(`cnt-${g}`).innerText = state[g];
+            update();
+        }
+
+        function update() {
+            let totalBGN = 90;
+            let sumGrades = 0;
+            let totalCount = 0;
+
+            for(let g in state) {
+                totalBGN += state[g] * rates[g];
+                sumGrades += state[g] * parseInt(g);
+                totalCount += state[g];
+            }
+
+            const bgnEl = document.getElementById('bgn');
+            const eurEl = document.getElementById('eur');
+            const avgEl = document.getElementById('avg');
+            
+            bgnEl.innerText = totalBGN.toFixed(2);
+            eurEl.innerText = (totalBGN / 1.95583).toFixed(2);
+            avgEl.innerText = totalCount > 0 ? (sumGrades / totalCount).toFixed(2) : "-";
+
+            const diff = totalBGN - 90;
+            [bgnEl, eurEl].forEach(el => {
+                el.classList.remove('pos', 'neg');
+                if (diff > 0) el.classList.add('pos');
+                if (diff < 0) el.classList.add('neg');
+            });
+        }
+
+        function toggleTheme() {
+            const b = document.body;
+            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+        }
+
+        function reset() {
+            for(let g in state) { state[g] = 0; document.getElementById(`cnt-${g}`).innerText = 0; }
+            update();
+        }
+
+        init();
+    </script>
+</body>
+</html>
