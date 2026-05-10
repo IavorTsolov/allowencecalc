@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Allowance Pro</title>
+    <title>Allowance Pro | Chart Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            /* LIGHT THEME (Palette 1) */
             --bg-main: linear-gradient(135deg, #41BBD9 0%, #006E90 100%);
             --card-bg: rgba(255, 255, 255, 0.88);
             --text-head: #4C3B4D;
@@ -17,10 +17,10 @@
             --negative: #e53e3e;
             --btn-text: #ffffff;
             --shadow: rgba(0, 110, 144, 0.2);
+            --chart-grid: rgba(0, 110, 144, 0.1);
         }
 
         [data-theme="dark"] {
-            /* DARK THEME (Palette 2) */
             --bg-main: linear-gradient(135deg, #131515 0%, #2B2C28 100%);
             --card-bg: rgba(43, 44, 40, 0.95);
             --text-head: #D1C6AD;
@@ -31,259 +31,340 @@
             --negative: #FF4B3E;
             --btn-text: #131515;
             --shadow: rgba(0, 0, 0, 0.5);
+            --chart-grid: rgba(255, 255, 255, 0.05);
         }
 
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 
         body {
             background: var(--bg-main);
-            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 15px;
-            transition: all 0.5s ease;
+            transition: 0.5s;
         }
 
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 30px;
             width: 100%;
-            max-width: 440px;
+            max-width: 480px; /* Made slightly wider to fit the chart nicely */
+            padding: 30px;
             box-shadow: 0 25px 50px -12px var(--shadow);
             position: relative;
-            padding: 25px;
         }
 
-        @media (min-width: 480px) {
-            .card { padding: 40px; }
+        /* Setup Modal Styles */
+        #setup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center; z-index: 100;
         }
-
-        .theme-switch {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            border: none;
-            background: var(--row-bg);
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s;
+        .setup-content {
+            background: var(--card-bg); padding: 30px; border-radius: 24px;
+            width: 90%; max-width: 400px; color: var(--text-head);
         }
+        .setup-input-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .setup-input-group input { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid var(--accent); background: var(--row-bg); color: var(--text-head); text-align: center; font-weight: bold;}
 
-        .header { text-align: center; margin-bottom: 25px; }
-        .header h1 { color: var(--text-head); font-size: 1.8rem; }
-        .header p { color: var(--text-body); opacity: 0.8; font-size: 0.9rem; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .theme-switch { position: absolute; top: 20px; right: 20px; cursor: pointer; border: none; background: var(--row-bg); padding: 10px; border-radius: 12px; font-size: 1.1rem; }
 
-        .grade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--row-bg);
-            border-radius: 18px;
-            margin-bottom: 12px;
-            padding: 15px 20px;
-            transition: 0.3s;
-        }
-
-        .grade-label { font-weight: 700; color: var(--text-head); }
-        .grade-sub { font-size: 0.75rem; color: var(--text-body); font-weight: 600; }
-
-        .controls { display: flex; align-items: center; gap: 15px; }
-
-        .btn {
-            width: 36px; height: 36px;
-            border-radius: 12px;
-            border: none;
-            background: var(--accent);
-            color: var(--btn-text);
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn:hover { transform: scale(1.1); }
-        .count { font-weight: 800; min-width: 25px; text-align: center; color: var(--text-head); }
-
-        /* --- UPDATED STATS SECTION --- */
-        .stats {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 2px solid var(--row-bg);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Laptop View: Stack labels and values vertically */
-        @media (min-width: 1024px) {
-            .stat-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-            .val { 
-                font-size: 1.8rem !important; 
-                width: 100%;
-                text-align: left;
-            }
-        }
-
-        .stat-label {
-            font-weight: 500;
-            color: var(--text-body);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .val { 
-            font-family: 'Courier New', Courier, monospace; 
-            font-weight: 800;
-            font-size: 1.2rem;
-            transition: color 0.3s;
-        }
-
-        .total-bgn { font-size: 1.5rem; }
-
+        .grade-item { display: flex; justify-content: space-between; align-items: center; background: var(--row-bg); border-radius: 18px; margin-bottom: 10px; padding: 12px 18px; }
+        .btn { width: 34px; height: 34px; border-radius: 10px; border: none; background: var(--accent); color: var(--btn-text); font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        
+        .stats { margin-top: 15px; border-top: 2px solid var(--row-bg); padding-top: 15px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 500;}
+        .val { font-family: 'Courier New', Courier, monospace; font-weight: 800; font-size: 1.2rem; }
         .pos { color: var(--positive) !important; }
         .neg { color: var(--negative) !important; }
 
-        .reset {
+        .action-btn { width: 100%; margin-top: 10px; padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; transition: 0.2s;}
+        .action-btn:active { transform: scale(0.98); }
+        .save-btn { background: var(--positive); color: white; margin-top: 15px; }
+        .reset-btn { background: transparent; color: var(--text-body); border: 1px solid var(--row-bg); font-size: 0.75rem; }
+
+        /* Chart Container */
+        .chart-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--row-bg);
+            position: relative;
+            height: 200px;
             width: 100%;
-            margin-top: 25px;
-            padding: 14px;
-            border-radius: 15px;
-            border: none;
-            background: var(--text-head);
-            color: var(--card-bg);
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
+            display: none; /* Hidden until there is data */
         }
+
+        .history-section { margin-top: 15px; }
+        .history-title { font-size: 0.85rem; text-transform: uppercase; color: var(--text-body); font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .history-list { max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; }
+        .history-list::-webkit-scrollbar { width: 6px; }
+        .history-list::-webkit-scrollbar-thumb { background: var(--row-bg); border-radius: 4px; }
+        .hist-item { background: var(--row-bg); padding: 10px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .hist-date { font-weight: 700; color: var(--text-head); }
+        .hist-data { font-family: monospace; font-weight: bold; }
     </style>
 </head>
 <body data-theme="light">
 
+    <div id="setup-overlay">
+        <div class="setup-content">
+            <h2 style="margin-bottom: 5px;">Setup Rates</h2>
+            <p style="font-size: 0.8rem; margin-bottom: 15px; opacity: 0.8;">Enter BGN value for each grade:</p>
+            <div id="setup-fields"></div>
+            <button class="action-btn" style="background: var(--accent); color: white;" onclick="saveSettings()">Save & Start</button>
+        </div>
+    </div>
+
     <div class="card">
-        <button class="theme-switch" onclick="toggleTheme()">🌓</button>
-        
+        <button class="theme-switch" onclick="toggleTheme()" title="Switch Theme">🌓</button>
         <div class="header">
-            <h1>Allowance</h1>
-            <p>Base: 90.00 BGN</p>
+            <h1 style="color: var(--text-head)">Allowance Pro</h1>
+            <p style="color: var(--text-body); opacity: 0.8; font-size: 0.9rem;">Base: 90.00 BGN</p>
         </div>
 
         <div id="ui-mount"></div>
 
         <div class="stats">
-            <div class="stat-row">
-                <span class="stat-label">Avg Grade</span>
-                <span id="avg" class="val">-</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Total BGN</span>
-                <span id="bgn" class="val total-bgn">90.00</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Total EUR</span>
-                <span id="eur" class="val" style="opacity: 0.8;">46.02</span>
-            </div>
+            <div class="stat-row"><span>Avg Grade</span><span id="avg" class="val">-</span></div>
+            <div class="stat-row"><span>Total BGN</span><span id="bgn" class="val">90.00</span></div>
         </div>
 
-        <button class="reset" onclick="reset()">Clear All Data</button>
+        <button class="action-btn save-btn" onclick="archiveMonth()">📥 Save & Archive Month</button>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="action-btn reset-btn" onclick="clearCurrent()">Reset Board</button>
+            <button class="action-btn reset-btn" onclick="showSetup()">Edit Rates</button>
+        </div>
+
+        <div class="chart-container" id="chart-wrapper">
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <div class="history-section">
+            <div class="history-title">
+                <span>History Log</span>
+                <span style="cursor: pointer; opacity: 0.5;" onclick="clearHistory()" title="Clear History">🗑️</span>
+            </div>
+            <div class="history-list" id="history-mount"></div>
+        </div>
     </div>
 
     <script>
+        let rates = {};
         const state = { 6:0, 5:0, 4:0, 3:0, 2:0 };
-        const rates = { 6:15, 5:10, 4:0, 3:-15, 2:-22 };
+        let historyLog = [];
+        let myChart = null; // Holds the chart instance
 
-        function init() {
+        function initApp() {
+            const savedRates = localStorage.getItem('allowance_rates');
+            if (savedRates) { rates = JSON.parse(savedRates); } 
+            else { showSetup(); return; }
+
+            const savedHistory = localStorage.getItem('allowance_history');
+            if (savedHistory) { historyLog = JSON.parse(savedHistory); }
+
+            renderControls();
+            renderHistory();
+            updateChart();
+        }
+
+        function showSetup() {
+            const container = document.getElementById('setup-fields');
+            container.innerHTML = '';
+            [6, 5, 4, 3, 2].forEach(g => {
+                container.innerHTML += `
+                    <div class="setup-input-group">
+                        <label>Grade ${g}:</label>
+                        <input type="number" id="input-${g}" value="${rates[g] || 0}">
+                    </div>`;
+            });
+            document.getElementById('setup-overlay').style.display = 'flex';
+        }
+
+        function saveSettings() {
+            [6, 5, 4, 3, 2].forEach(g => { rates[g] = parseFloat(document.getElementById(`input-${g}`).value) || 0; });
+            localStorage.setItem('allowance_rates', JSON.stringify(rates));
+            document.getElementById('setup-overlay').style.display = 'none';
+            renderControls();
+        }
+
+        function renderControls() {
             const mount = document.getElementById('ui-mount');
+            mount.innerHTML = '';
             [6, 5, 4, 3, 2].forEach(g => {
                 mount.innerHTML += `
                     <div class="grade-item">
                         <div>
-                            <div class="grade-label">Grade ${g}</div>
-                            <div class="grade-sub">${rates[g] >= 0 ? '+' : ''}${rates[g]} BGN</div>
+                            <div style="font-weight:700; color: var(--text-head)">Grade ${g}</div>
+                            <div style="font-size:0.75rem; color:var(--text-body)">${rates[g] >= 0 ? '+' : ''}${rates[g]} BGN</div>
                         </div>
-                        <div class="controls">
+                        <div style="display:flex; align-items:center;">
                             <button class="btn" onclick="act(${g}, -1)">−</button>
-                            <span id="cnt-${g}" class="count">0</span>
+                            <span id="cnt-${g}" style="font-weight:800; min-width: 30px; text-align:center; color: var(--text-head)">${state[g]}</span>
                             <button class="btn" onclick="act(${g}, 1)">+</button>
                         </div>
                     </div>`;
             });
+            updateTotals();
         }
 
         function act(g, d) {
             if(state[g] + d < 0) return;
             state[g] += d;
             document.getElementById(`cnt-${g}`).innerText = state[g];
-            update();
+            updateTotals();
         }
 
-        function update() {
-            let totalBGN = 90;
-            let sumGrades = 0;
-            let totalCount = 0;
-
+        function updateTotals() {
+            let totalBGN = 90, sum = 0, count = 0;
             for(let g in state) {
                 totalBGN += state[g] * rates[g];
-                sumGrades += state[g] * parseInt(g);
-                totalCount += state[g];
+                sum += state[g] * parseInt(g);
+                count += state[g];
             }
-
-            const bgnEl = document.getElementById('bgn');
-            const eurEl = document.getElementById('eur');
-            const avgEl = document.getElementById('avg');
             
-            bgnEl.innerText = totalBGN.toFixed(2);
-            eurEl.innerText = (totalBGN / 1.95583).toFixed(2);
-            avgEl.innerText = totalCount > 0 ? (sumGrades / totalCount).toFixed(2) : "-";
+            document.getElementById('bgn').innerText = totalBGN.toFixed(2);
+            document.getElementById('avg').innerText = count > 0 ? (sum / count).toFixed(2) : "-";
 
             const diff = totalBGN - 90;
-            [bgnEl, eurEl].forEach(el => {
-                el.classList.remove('pos', 'neg');
-                if (diff > 0) el.classList.add('pos');
-                if (diff < 0) el.classList.add('neg');
+            const bgnEl = document.getElementById('bgn');
+            bgnEl.className = 'val ' + (diff > 0 ? 'pos' : (diff < 0 ? 'neg' : ''));
+        }
+
+        function archiveMonth() {
+            let totalBGN = 90, sum = 0, count = 0;
+            for(let g in state) {
+                totalBGN += state[g] * rates[g];
+                sum += state[g] * parseInt(g);
+                count += state[g];
+            }
+
+            if(count === 0) {
+                alert("You haven't added any grades to archive this month!");
+                return;
+            }
+
+            const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            
+            // Push to end for chronological charting
+            historyLog.push({
+                date: dateStr,
+                avg: parseFloat((sum / count).toFixed(2)),
+                bgn: parseFloat(totalBGN.toFixed(2))
             });
+
+            localStorage.setItem('allowance_history', JSON.stringify(historyLog));
+            clearCurrent();
+            renderHistory();
+            updateChart();
+        }
+
+        function renderHistory() {
+            const mount = document.getElementById('history-mount');
+            if (historyLog.length === 0) {
+                mount.innerHTML = `<div style="text-align:center; opacity:0.5; font-size:0.8rem; padding: 10px;">No history archived yet.</div>`;
+                return;
+            }
+
+            // Reverse for the list so newest is on top
+            const reversedLog = [...historyLog].reverse();
+            
+            mount.innerHTML = reversedLog.map(h => `
+                <div class="hist-item">
+                    <span class="hist-date">${h.date}</span>
+                    <span class="hist-data">
+                        <span style="opacity:0.7; margin-right:8px;">Avg: ${h.avg}</span>
+                        <span class="${h.bgn >= 90 ? 'pos' : 'neg'}">${h.bgn.toFixed(2)} BGN</span>
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // --- CHART GENERATION LOGIC ---
+        function updateChart() {
+            const wrapper = document.getElementById('chart-wrapper');
+            if (historyLog.length === 0) {
+                wrapper.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            // Extract data
+            const labels = historyLog.map(h => h.date);
+            const dataBGN = historyLog.map(h => h.bgn);
+
+            // Get CSS variable colors for the chart
+            const rootStyle = getComputedStyle(document.body);
+            const gridColor = rootStyle.getPropertyValue('--chart-grid').trim();
+            const textColor = rootStyle.getPropertyValue('--text-body').trim();
+            const barColor = rootStyle.getPropertyValue('--accent').trim();
+
+            if (myChart) {
+                myChart.destroy(); // Destroy old chart before drawing new one
+            }
+
+            // We apply a slight delay to ensure CSS variables are read correctly if theme just switched
+            setTimeout(() => {
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Earned BGN',
+                            data: dataBGN,
+                            backgroundColor: barColor,
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }, 50);
+        }
+
+        function clearHistory() {
+            if(confirm("Are you sure you want to delete your history and chart data?")) {
+                historyLog = [];
+                localStorage.removeItem('allowance_history');
+                renderHistory();
+                updateChart();
+            }
+        }
+
+        function clearCurrent() {
+            for(let g in state) { state[g] = 0; }
+            renderControls();
         }
 
         function toggleTheme() {
             const b = document.body;
             b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+            updateChart(); // Redraw chart with new theme colors
         }
 
-        function reset() {
-            for(let g in state) { state[g] = 0; document.getElementById(`cnt-${g}`).innerText = 0; }
-            update();
-        }
-
-        init();
+        initApp();
     </script>
 </body>
 </html>
